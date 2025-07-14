@@ -1,35 +1,42 @@
 ﻿using AuthService.Data;
-using AuthService.Models;
 using AuthService.Services;
+using MGSystem.Shared.DTOs;
+using MGSystem.Shared.Responses;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuthService.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("auth")]
 public class AuthController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly JwtService _jwt;
+    private readonly PasswordHasherService _hasher;
 
-    public AuthController(AppDbContext db, JwtService jwt)
+    public AuthController(AppDbContext db, JwtService jwt, PasswordHasherService hasher)
     {
         _db = db;
         _jwt = jwt;
+        _hasher = hasher;
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginRequestDto dto)
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == dto.Username);
-        if (user == null || user.PasswordHash != dto.Password) // düz karşılaştırma, hash yok şimdilik
+        var user = await _db.Users.FirstOrDefaultAsync(x => x.Username == dto.Username);
+        if (user is null || !_hasher.VerifyPassword(user.PasswordHash, dto.Password))
         {
-            return Unauthorized(new { message = "Kullanıcı adı veya şifre hatalı" });
+            return Unauthorized(ApiResponse<string>.Fail("Geçersiz kullanıcı adı veya şifre."));
         }
 
-        var token = _jwt.GenerateToken(user);
 
-        return Ok(ApiResponse<string>.Ok(token));
+        var token = _jwt.GenerateToken(user);
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            token,
+            user = new { user.Id, user.Username, user.Role }
+        }));
     }
 }

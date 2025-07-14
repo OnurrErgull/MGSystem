@@ -9,6 +9,7 @@ namespace AuthService.Services;
 public class JwtService
 {
     private readonly IConfiguration _config;
+
     public JwtService(IConfiguration config)
     {
         _config = config;
@@ -19,11 +20,11 @@ public class JwtService
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
-            new Claim(ClaimTypes.Role, user.Role)
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.UniqueName, user.Username),
+            new(ClaimTypes.Role, user.Role)
         };
 
         var token = new JwtSecurityToken(

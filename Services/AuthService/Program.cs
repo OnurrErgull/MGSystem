@@ -13,6 +13,7 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
+builder.Services.AddSingleton<PasswordHasherService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddControllers();
 
@@ -23,6 +24,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+//kullanýcý seed
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var hasher = scope.ServiceProvider.GetRequiredService<PasswordHasherService>();
+    await DbSeeder.SeedUsersAsync(db, hasher);
+}
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
