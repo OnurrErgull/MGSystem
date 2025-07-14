@@ -1,4 +1,5 @@
 using AuthService.Data;
+using AuthService.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -12,6 +13,8 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
+builder.Services.AddScoped<JwtService>();
+builder.Services.AddControllers();
 
 // EF Core - PostgreSQL baðlantýsý
 builder.Services.AddDbContext<AppDbContext>(options =>
